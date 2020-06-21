@@ -1,3 +1,5 @@
+# This was my first crack at the program written in Python.  Keeping it for historical reference.
+#
 # Requirements:
 # Find the save folder
 # Find the save file to be copied
