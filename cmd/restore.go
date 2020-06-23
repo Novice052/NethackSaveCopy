@@ -17,6 +17,9 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -24,15 +27,37 @@ import (
 // restoreCmd represents the restore command
 var restoreCmd = &cobra.Command{
 	Use:   "restore",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Restores a NetHack save file from a backup.",
+	Long:  `Restores a NetHack save file from a backup.  Accepts one argument that names the backup file to be restored.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("restore called")
+		saveDir := "C:\\Users\\immer\\AppData\\Local\\NetHack\\3.6"
+		src := saveDir + "\\" + args[0] + ".NetHack-saved-game-bak"
+		// checks that the file exists
+		sourceFileStat, err := os.Stat(src)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// checks that the file isn't funky
+		if !sourceFileStat.Mode().IsRegular() {
+			log.Fatalf("%s is not a regular file", src)
+		}
+		// opens the file
+		source, err := os.Open(src)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer source.Close()
+		dst := saveDir + "\\" + args[0] + ".NetHack-saved-game"
+		// creates a new file at dst
+		destination, err := os.Create(dst)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer destination.Close()
+		nBytes, err := io.Copy(destination, source)
+		log.Print(nBytes)
+		log.Fatal(err)
 	},
 }
 

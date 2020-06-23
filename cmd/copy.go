@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 NAME HERE <EMAIL ADDRESS>
+Copyright © 2020 John Abbott <immersed101@protonmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -24,15 +27,39 @@ import (
 // copyCmd represents the copy command
 var copyCmd = &cobra.Command{
 	Use:   "copy",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Args:  cobra.MinimumNArgs(1),
+	Short: "Makes a backup copy of a NetHack save file.",
+	Long:  `Makes a backup copy of a NetHack save file.  Accepts one argument that names the save file to be copied.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("copy called")
+		// NetHack save files look like <Name.NetHack-saved-game>
+		saveDir := "C:\\Users\\immer\\AppData\\Local\\NetHack\\3.6"
+		src := saveDir + "\\" + args[0] + ".NetHack-saved-game"
+		// checks that the file exists
+		sourceFileStat, err := os.Stat(src)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// checks that the file isn't funky
+		if !sourceFileStat.Mode().IsRegular() {
+			log.Fatalf("%s is not a regular file", src)
+		}
+		// opens the file
+		source, err := os.Open(src)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer source.Close()
+		dst := src + "-bak"
+		// creates a new file at dst
+		destination, err := os.Create(dst)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer destination.Close()
+		nBytes, err := io.Copy(destination, source)
+		log.Print(nBytes)
+		log.Fatal(err)
 	},
 }
 
