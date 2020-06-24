@@ -17,9 +17,10 @@ package cmd
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"os"
+	"os/user"
 
 	"github.com/spf13/cobra"
 )
@@ -32,8 +33,14 @@ var copyCmd = &cobra.Command{
 	Long:  `Makes a backup copy of a NetHack save file.  Accepts one argument that names the save file to be copied.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("copy called")
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(usr.HomeDir)
+
 		// NetHack save files look like <Name.NetHack-saved-game>
-		saveDir := "C:\\Users\\immer\\AppData\\Local\\NetHack\\3.6"
+		saveDir := usr.HomeDir + "\\AppData\\Local\\NetHack\\3.6"
 		src := saveDir + "\\" + args[0] + ".NetHack-saved-game"
 		// checks that the file exists
 		sourceFileStat, err := os.Stat(src)
@@ -58,7 +65,7 @@ var copyCmd = &cobra.Command{
 		}
 		defer destination.Close()
 		nBytes, err := io.Copy(destination, source)
-		log.Print(nBytes)
+		log.Println(nBytes)
 		log.Fatal(err)
 	},
 }
