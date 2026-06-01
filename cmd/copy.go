@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"os/user"
@@ -33,14 +32,14 @@ var copyCmd = &cobra.Command{
 	Short: "Makes a backup copy of a NetHack save file.",
 	Long:  `Makes a backup copy of a NetHack save file.  Accepts one argument that names the save file to be copied.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("copy called")
+		// CHANGE: removed noisy debug print and now log only meaningful progress/errors.
 		usr, err := user.Current()
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println(usr.HomeDir)
 
 		// NetHack save files look like <Name.NetHack-saved-game>
+		// CHANGE: build paths from current user home directory so command is portable.
 		saveDir := usr.HomeDir + "\\AppData\\Local\\NetHack\\3.6"
 		src := saveDir + "\\" + args[0] + ".NetHack-saved-game"
 		// checks that the file exists
@@ -66,8 +65,12 @@ var copyCmd = &cobra.Command{
 		}
 		defer destination.Close()
 		nBytes, err := io.Copy(destination, source)
-		log.Println(nBytes)
-		log.Fatal(err)
+		// CHANGE: fail only when copy operation returns an error.
+		if err != nil {
+			log.Fatal(err)
+		}
+		// CHANGE: explicit success message with source/destination and bytes copied.
+		log.Infof("Copied %d bytes from %s to %s", nBytes, src, dst)
 	},
 }
 

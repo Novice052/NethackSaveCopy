@@ -17,22 +17,63 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/user"
+	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Lists NetHack save files and backups in the save directory.",
+	Long:  `Lists NetHack save files and backups in the default NetHack 3.6 save directory.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list called")
+		// CHANGE: list command now performs real directory scanning instead of placeholder output.
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// CHANGE: use current user home path for portable Windows save directory detection.
+		saveDir := usr.HomeDir + "\\AppData\\Local\\NetHack\\3.6"
+		entries, err := os.ReadDir(saveDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		const saveSuffix = ".NetHack-saved-game"
+		const backupSuffix = ".NetHack-saved-game-bak"
+
+		fmt.Println("Save directory:", saveDir)
+		fmt.Println("Detected NetHack saves/backups:")
+
+		foundAny := false
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+
+			name := entry.Name()
+			if strings.HasSuffix(name, backupSuffix) {
+				character := strings.TrimSuffix(name, backupSuffix)
+				fmt.Printf("- %s (backup)\n", character)
+				foundAny = true
+				continue
+			}
+
+			if strings.HasSuffix(name, saveSuffix) {
+				character := strings.TrimSuffix(name, saveSuffix)
+				fmt.Printf("- %s (active save)\n", character)
+				foundAny = true
+			}
+		}
+
+		if !foundAny {
+			fmt.Println("(none found)")
+		}
 	},
 }
 

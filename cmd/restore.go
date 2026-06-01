@@ -16,9 +16,9 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"os"
+	"os/user"
 
 	log "github.com/sirupsen/logrus"
 
@@ -28,11 +28,17 @@ import (
 // restoreCmd represents the restore command
 var restoreCmd = &cobra.Command{
 	Use:   "restore",
+	Args:  cobra.MinimumNArgs(1),
 	Short: "Restores a NetHack save file from a backup.",
 	Long:  `Restores a NetHack save file from a backup.  Accepts one argument that names the backup file to be restored.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("restore called")
-		saveDir := "C:\\Users\\immer\\AppData\\Local\\NetHack\\3.6"
+		// CHANGE: removed noisy debug print and now rely on structured logging.
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		// CHANGE: replaced hardcoded user path with current user home path.
+		saveDir := usr.HomeDir + "\\AppData\\Local\\NetHack\\3.6"
 		src := saveDir + "\\" + args[0] + ".NetHack-saved-game-bak"
 		// checks that the file exists
 		sourceFileStat, err := os.Stat(src)
@@ -57,8 +63,12 @@ var restoreCmd = &cobra.Command{
 		}
 		defer destination.Close()
 		nBytes, err := io.Copy(destination, source)
-		log.Print(nBytes)
-		log.Fatal(err)
+		// CHANGE: fail only when copy operation returns an error.
+		if err != nil {
+			log.Fatal(err)
+		}
+		// CHANGE: explicit success message with source/destination and bytes copied.
+		log.Infof("Restored %d bytes from %s to %s", nBytes, src, dst)
 	},
 }
 
